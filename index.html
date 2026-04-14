@@ -800,21 +800,7 @@ body::before {
   color: var(--accent);
 }
 
-/* Symbol popover */
-.sym-pop {
-  position: fixed;
-  z-index: 9999;
-  min-width: 180px;
-  max-height: 280px;
-  overflow-y: auto;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5);
-  padding: 4px;
-  display: none;
-}
-.sym-pop.open { display: block; }
+/* Symbol popover group headers */
 .sym-pop-group {
   font-size: .5rem;
   font-weight: 700;
@@ -1826,8 +1812,7 @@ function rebuildSec() {
 }
 
 function renderSec() {
-  // Clean up detached popovers from previous render
-  document.querySelectorAll('body > .lm-pop, body > .sym-pop').forEach(p => p.remove());
+  closePops();
   const c = document.getElementById('secContainer');
   c.innerHTML = '';
   sections.forEach((sec, si) => {
@@ -1947,94 +1932,59 @@ function renderSec() {
           const btns = document.createElement('div');
           btns.className = 'line-btns';
 
-          // Helper: create a meta button with popover
-          function mkMetaBtn(tag, color, currentVal, options, onSelect) {
+          // Helper: create a meta button (lazy popover on click)
+          function mkMetaBtn(tag, color, currentVal, optsFn, onSelect) {
             const btn = document.createElement('button');
             btn.className = 'lm-btn' + (currentVal ? ' active' : '');
             btn.style.setProperty('--btn-c', color);
             btn.innerHTML = currentVal
               ? `<span class="lm-tag">${tag}</span><span class="lm-val">${esc(currentVal)}</span>`
               : `<span class="lm-tag">${tag}</span>`;
-            // Popover
-            const pop = document.createElement('div');
-            pop.className = 'lm-pop';
-            // Clear option
-            const clr = document.createElement('button');
-            clr.className = 'lm-pop-item clear-opt';
-            clr.textContent = '\u2014 none';
-            clr.onclick = (e) => { e.stopPropagation(); onSelect(''); closePops(); };
-            pop.appendChild(clr);
-            options.forEach(opt => {
-              const item = document.createElement('button');
-              item.className = 'lm-pop-item' + (opt.value === currentVal ? ' sel' : '');
-              item.textContent = opt.label;
-              item.onclick = (e) => { e.stopPropagation(); onSelect(opt.value); closePops(); };
-              pop.appendChild(item);
-            });
-            document.body.appendChild(pop);
             btn.onclick = (e) => {
               e.stopPropagation();
-              const wasOpen = pop.classList.contains('open');
-              closePops();
-              if (!wasOpen) openPop(btn, pop);
+              const isOpen = _sharedPop.classList.contains('open') && _sharedPop._anchorBtn === btn;
+              if (isOpen) { closePops(); return; }
+              _sharedPop._anchorBtn = btn;
+              openMetaPop(btn, color, currentVal, optsFn(), onSelect);
             };
             return btn;
           }
 
           // Artist button
-          const artOpts = artists.map(a => {
+          const artOptsFn = () => artists.map(a => {
             let info = a.gender[0];
             if (a.voice) info += '/' + a.voice;
             return { value: a.name, label: `${a.name} (${info})` };
           });
-          btns.appendChild(mkMetaBtn('A', 'var(--green)', lineObj.artist, artOpts,
+          btns.appendChild(mkMetaBtn('A', 'var(--green)', lineObj.artist, artOptsFn,
             ((g, idx) => v => { g.lines[idx].artist = v; renderSec(); scheduleAutoSave(); })(grp, li)));
 
           // Type button
-          const typeOpts = TYPES.map(t => ({ value: t, label: t }));
-          btns.appendChild(mkMetaBtn('T', 'var(--cyan)', lineObj.type === 'Rap' ? '' : lineObj.type, typeOpts,
+          const typeOptsFn = () => TYPES.map(t => ({ value: t, label: t }));
+          btns.appendChild(mkMetaBtn('T', 'var(--cyan)', lineObj.type === 'Rap' ? '' : lineObj.type, typeOptsFn,
             ((g, idx) => v => { g.lines[idx].type = v || 'Rap'; renderSec(); scheduleAutoSave(); })(grp, li)));
 
           // Vocal button
-          const vocOpts = VOCAL_CUE_PRESETS.map(p => ({ value: p, label: p }));
-          btns.appendChild(mkMetaBtn('V', 'var(--pink)', lineObj.vocalCues, vocOpts,
+          const vocOptsFn = () => VOCAL_CUE_PRESETS.map(p => ({ value: p, label: p }));
+          btns.appendChild(mkMetaBtn('V', 'var(--pink)', lineObj.vocalCues, vocOptsFn,
             ((g, idx) => v => { g.lines[idx].vocalCues = v; renderSec(); scheduleAutoSave(); })(grp, li)));
 
           // Performance button
-          const perfOpts = PERFORMANCE_PRESETS.map(p => ({ value: p, label: p }));
-          btns.appendChild(mkMetaBtn('P', 'var(--orange)', lineObj.performance, perfOpts,
+          const perfOptsFn = () => PERFORMANCE_PRESETS.map(p => ({ value: p, label: p }));
+          btns.appendChild(mkMetaBtn('P', 'var(--orange)', lineObj.performance, perfOptsFn,
             ((g, idx) => v => { g.lines[idx].performance = v; renderSec(); scheduleAutoSave(); })(grp, li)));
 
-          // ── Symbol insert button ──
+          // ── Symbol insert button (lazy popover) ──
           const symBtn = document.createElement('button');
           symBtn.className = 'line-sym-btn';
           symBtn.textContent = '\u2795';
-          const symPop = document.createElement('div');
-          symPop.className = 'sym-pop';
-          INLINE_SYMBOL_GROUPS.forEach(grpS => {
-            const lbl = document.createElement('div');
-            lbl.className = 'sym-pop-group';
-            lbl.textContent = grpS.group;
-            symPop.appendChild(lbl);
-            grpS.items.forEach(sym => {
-              const item = document.createElement('button');
-              item.className = 'sym-pop-item';
-              item.textContent = sym.title ? `${sym.label}  (${sym.title})` : sym.label;
-              item.onclick = ((textarea, label) => e => {
-                e.stopPropagation();
-                insertSymbolAtCursor(textarea, label);
-                closePops();
-              })(ta, sym.label);
-              symPop.appendChild(item);
-            });
-          });
-          document.body.appendChild(symPop);
-          symBtn.onclick = (e) => {
+          symBtn.onclick = ((textarea) => e => {
             e.stopPropagation();
-            const wasOpen = symPop.classList.contains('open');
-            closePops();
-            if (!wasOpen) openPop(symBtn, symPop);
-          };
+            const isOpen = _sharedPop.classList.contains('open') && _sharedPop._anchorBtn === symBtn;
+            if (isOpen) { closePops(); return; }
+            _sharedPop._anchorBtn = symBtn;
+            openSymPop(symBtn, textarea);
+          })(ta);
           btns.appendChild(symBtn);
 
           row.appendChild(btns);
@@ -2558,26 +2508,75 @@ const INLINE_SYMBOL_GROUPS = [
   ]}
 ];
 
-// Close all open popovers
+// ── Shared Popover System (lazy, single DOM element) ──
+const _sharedPop = document.createElement('div');
+_sharedPop.className = 'lm-pop';
+document.body.appendChild(_sharedPop);
+
 function closePops() {
-  document.querySelectorAll('.lm-pop.open, .sym-pop.open').forEach(p => p.classList.remove('open'));
+  _sharedPop.classList.remove('open');
+  _sharedPop.innerHTML = '';
 }
-function openPop(btn, pop) {
+
+function openMetaPop(btn, color, currentVal, options, onSelect) {
   closePops();
+  _sharedPop.style.setProperty('--btn-c', color);
+  // Build items
+  const clr = document.createElement('button');
+  clr.className = 'lm-pop-item clear-opt';
+  clr.textContent = '\u2014 none';
+  clr.onclick = (e) => { e.stopPropagation(); onSelect(''); closePops(); };
+  _sharedPop.appendChild(clr);
+  options.forEach(opt => {
+    const item = document.createElement('button');
+    item.className = 'lm-pop-item' + (opt.value === currentVal ? ' sel' : '');
+    item.textContent = opt.label;
+    item.onclick = (e) => { e.stopPropagation(); onSelect(opt.value); closePops(); };
+    _sharedPop.appendChild(item);
+  });
+  // Position
   const r = btn.getBoundingClientRect();
-  pop.style.left = r.left + 'px';
-  pop.style.top = (r.bottom + 4) + 'px';
-  // If it would overflow right edge, align to right side of button
-  pop.classList.add('open');
-  const pr = pop.getBoundingClientRect();
+  _sharedPop.style.left = r.left + 'px';
+  _sharedPop.style.top = (r.bottom + 4) + 'px';
+  _sharedPop.classList.add('open');
+  const pr = _sharedPop.getBoundingClientRect();
   if (pr.right > window.innerWidth - 8) {
-    pop.style.left = Math.max(8, r.right - pr.width) + 'px';
+    _sharedPop.style.left = Math.max(8, r.right - pr.width) + 'px';
   }
-  // If it would overflow bottom, show above
   if (pr.bottom > window.innerHeight - 8) {
-    pop.style.top = (r.top - pr.height - 4) + 'px';
+    _sharedPop.style.top = (r.top - pr.height - 4) + 'px';
   }
 }
+
+function openSymPop(btn, ta) {
+  closePops();
+  _sharedPop.style.removeProperty('--btn-c');
+  INLINE_SYMBOL_GROUPS.forEach(grpS => {
+    const lbl = document.createElement('div');
+    lbl.className = 'sym-pop-group';
+    lbl.textContent = grpS.group;
+    _sharedPop.appendChild(lbl);
+    grpS.items.forEach(sym => {
+      const item = document.createElement('button');
+      item.className = 'sym-pop-item';
+      item.textContent = sym.title ? `${sym.label}  (${sym.title})` : sym.label;
+      item.onclick = (e) => { e.stopPropagation(); insertSymbolAtCursor(ta, sym.label); closePops(); };
+      _sharedPop.appendChild(item);
+    });
+  });
+  const r = btn.getBoundingClientRect();
+  _sharedPop.style.left = r.left + 'px';
+  _sharedPop.style.top = (r.bottom + 4) + 'px';
+  _sharedPop.classList.add('open');
+  const pr = _sharedPop.getBoundingClientRect();
+  if (pr.right > window.innerWidth - 8) {
+    _sharedPop.style.left = Math.max(8, r.right - pr.width) + 'px';
+  }
+  if (pr.bottom > window.innerHeight - 8) {
+    _sharedPop.style.top = (r.top - pr.height - 4) + 'px';
+  }
+}
+
 document.addEventListener('click', () => closePops());
 
 function insertSymbolAtCursor(ta, label) {
