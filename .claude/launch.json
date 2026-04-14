@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Static HTML Server",
+      "runtimeExecutable": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\MSBuild\\Microsoft\\VisualStudio\\NodeJs\\node.exe",
+      "runtimeArgs": ["serve.js"],
+      "port": 3000
+    }
+  ]
+}
