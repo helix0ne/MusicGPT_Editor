@@ -56,7 +56,7 @@ body::before {
 .app {
   position: relative;
   z-index: 1;
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 24px 20px 60px;
 }
@@ -669,96 +669,178 @@ body::before {
 
 /* (old inline-symbols bar removed — per-line dropdown used now) */
 
-/* ── Per-Line Meta ── */
+/* ── Per-Line Meta Buttons ── */
 .line-wrap {
   border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
 }
 .line-wrap:last-child { border-bottom: none; }
-.line-meta {
+
+.line-btns {
   display: flex;
-  gap: 0;
-  background: color-mix(in srgb, var(--surface2) 50%, var(--bg));
-  border-top: 1px solid color-mix(in srgb, var(--border) 25%, transparent);
-  height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: height .15s ease, opacity .15s ease;
+  align-items: center;
+  gap: 3px;
+  padding: 0 4px;
+  flex-shrink: 0;
 }
-.line-wrap:hover .line-meta,
-.line-wrap:focus-within .line-meta {
+.lm-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
   height: 22px;
-  opacity: 1;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--btn-c, var(--accent)) 30%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--btn-c, var(--accent)) 8%, transparent);
+  color: color-mix(in srgb, var(--btn-c, var(--accent)) 70%, var(--text));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .55rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .12s ease;
+  outline: none;
+  user-select: none;
 }
-.lm-field {
-  display: flex;
-  align-items: center;
-  border-right: 1px solid color-mix(in srgb, var(--border) 25%, transparent);
-  flex: 1;
-  min-width: 80px;
+.lm-btn:hover {
+  background: color-mix(in srgb, var(--btn-c, var(--accent)) 18%, transparent);
+  border-color: color-mix(in srgb, var(--btn-c, var(--accent)) 50%, transparent);
+  color: var(--btn-c, var(--accent));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--btn-c, var(--accent)) 20%, transparent);
 }
-.lm-field:last-child { border-right: none; }
-.lm-label {
-  font-size: .45rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .8px;
-  padding: 0 5px;
-  background: color-mix(in srgb, var(--bg) 40%, transparent);
-  border-right: 1px solid color-mix(in srgb, var(--border) 20%, transparent);
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  min-width: 18px;
-  justify-content: center;
+.lm-btn.active {
+  background: color-mix(in srgb, var(--btn-c, var(--accent)) 22%, transparent);
+  border-color: var(--btn-c, var(--accent));
+  color: var(--btn-c, var(--accent));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--btn-c, var(--accent)) 25%, transparent),
+              inset 0 0 8px color-mix(in srgb, var(--btn-c, var(--accent)) 8%, transparent);
 }
-.lm-field select {
-  background: transparent;
+.lm-btn .lm-tag {
+  font-size: .5rem;
+  opacity: .7;
+}
+.lm-btn .lm-val {
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  font-size: .55rem;
+}
+
+/* Popover for meta button options */
+.lm-pop {
+  position: fixed;
+  z-index: 9999;
+  min-width: 150px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5), 0 0 12px color-mix(in srgb, var(--btn-c, var(--accent)) 15%, transparent);
+  padding: 4px;
+  display: none;
+}
+.lm-pop.open { display: block; }
+.lm-pop-item {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
   border: none;
-  border-radius: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: 'Outfit', sans-serif;
+  font-size: .65rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all .08s;
+}
+.lm-pop-item:hover {
+  background: color-mix(in srgb, var(--btn-c, var(--accent)) 12%, transparent);
+  color: var(--text);
+}
+.lm-pop-item.sel {
+  background: color-mix(in srgb, var(--btn-c, var(--accent)) 18%, transparent);
+  color: var(--btn-c, var(--accent));
+  font-weight: 600;
+}
+.lm-pop-item.clear-opt {
+  color: var(--text-dim);
+  opacity: .6;
+  font-style: italic;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  margin-bottom: 2px;
+}
+
+/* Per-line symbol button */
+.line-sym-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  width: 24px;
+  min-width: 24px;
+  border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--surface2) 60%, transparent);
+  color: var(--text-dim);
+  font-size: .6rem;
+  cursor: pointer;
+  opacity: .4;
+  transition: all .12s;
+  outline: none;
+  position: relative;
+}
+.line-sym-btn:hover {
+  opacity: .9;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--accent);
+}
+
+/* Symbol popover */
+.sym-pop {
+  position: fixed;
+  z-index: 9999;
+  min-width: 180px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  padding: 4px;
+  display: none;
+}
+.sym-pop.open { display: block; }
+.sym-pop-group {
+  font-size: .5rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  padding: 4px 8px 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: .5;
+}
+.sym-pop-item {
+  display: block;
+  width: 100%;
+  padding: 3px 8px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
   color: var(--text-dim);
   font-family: 'Outfit', sans-serif;
   font-size: .62rem;
-  padding: 2px 4px;
-  outline: none;
-  height: 22px;
-  flex: 1;
-  min-width: 0;
+  text-align: left;
   cursor: pointer;
-  transition: color .1s, background .1s;
+  transition: all .08s;
 }
-.lm-field select:hover {
+.sym-pop-item:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--text);
-  background: color-mix(in srgb, var(--sec-color, var(--accent)) 5%, transparent);
-}
-.lm-field select:focus {
-  color: var(--text);
-  background: color-mix(in srgb, var(--sec-color, var(--accent)) 8%, transparent);
-  box-shadow: inset 0 -1px 0 var(--sec-color, var(--accent));
-}
-/* Per-line symbol dropdown (inside line-row) */
-.line-sym-dropdown {
-  background: transparent;
-  border: none;
-  border-left: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
-  border-radius: 0;
-  color: var(--text-dim);
-  font-size: .6rem;
-  padding: 0 6px;
-  cursor: pointer;
-  outline: none;
-  width: 32px;
-  min-width: 32px;
-  opacity: .3;
-  transition: opacity .12s, background .12s;
-  flex-shrink: 0;
-}
-.line-sym-dropdown:hover {
-  opacity: .8;
-  background: color-mix(in srgb, var(--sec-color, var(--accent)) 6%, transparent);
-}
-.line-sym-dropdown:focus {
-  opacity: 1;
-  background: color-mix(in srgb, var(--sec-color, var(--accent)) 10%, transparent);
 }
 
 /* ── Section Controls Bar ── */
@@ -1744,6 +1826,8 @@ function rebuildSec() {
 }
 
 function renderSec() {
+  // Clean up detached popovers from previous render
+  document.querySelectorAll('body > .lm-pop, body > .sym-pop').forEach(p => p.remove());
   const c = document.getElementById('secContainer');
   c.innerHTML = '';
   sections.forEach((sec, si) => {
@@ -1829,7 +1913,7 @@ function renderSec() {
           return sel;
         }
 
-        // Lines with per-line meta
+        // Lines with per-line meta buttons
         const lines = document.createElement('div');
         lines.className = 'group-lines';
         grp.lines.forEach((lineObj, li) => {
@@ -1840,7 +1924,7 @@ function renderSec() {
           const lineWrap = document.createElement('div');
           lineWrap.className = 'line-wrap';
 
-          // ── Main line row (letter + textarea) ──
+          // ── Main line row ──
           const row = document.createElement('div');
           row.className = 'line-row';
           const letterEl = document.createElement('div');
@@ -1859,72 +1943,102 @@ function renderSec() {
           setTimeout(((t) => () => autoResizeTA(t))(ta), 0);
           row.appendChild(ta);
 
-          // ── Per-line symbol dropdown (inline in line row) ──
-          const symSel = document.createElement('select');
-          symSel.className = 'line-sym-dropdown';
-          symSel.innerHTML = '<option value="">\u2795</option>';
-          INLINE_SYMBOL_GROUPS.forEach(grpS => {
-            const og = document.createElement('optgroup');
-            og.label = grpS.group;
-            grpS.items.forEach(sym => {
-              const o = document.createElement('option');
-              o.value = sym.label;
-              o.textContent = sym.title ? `${sym.label}  (${sym.title})` : sym.label;
-              og.appendChild(o);
+          // ── Per-line meta buttons container ──
+          const btns = document.createElement('div');
+          btns.className = 'line-btns';
+
+          // Helper: create a meta button with popover
+          function mkMetaBtn(tag, color, currentVal, options, onSelect) {
+            const btn = document.createElement('button');
+            btn.className = 'lm-btn' + (currentVal ? ' active' : '');
+            btn.style.setProperty('--btn-c', color);
+            btn.innerHTML = currentVal
+              ? `<span class="lm-tag">${tag}</span><span class="lm-val">${esc(currentVal)}</span>`
+              : `<span class="lm-tag">${tag}</span>`;
+            // Popover
+            const pop = document.createElement('div');
+            pop.className = 'lm-pop';
+            // Clear option
+            const clr = document.createElement('button');
+            clr.className = 'lm-pop-item clear-opt';
+            clr.textContent = '\u2014 none';
+            clr.onclick = (e) => { e.stopPropagation(); onSelect(''); closePops(); };
+            pop.appendChild(clr);
+            options.forEach(opt => {
+              const item = document.createElement('button');
+              item.className = 'lm-pop-item' + (opt.value === currentVal ? ' sel' : '');
+              item.textContent = opt.label;
+              item.onclick = (e) => { e.stopPropagation(); onSelect(opt.value); closePops(); };
+              pop.appendChild(item);
             });
-            symSel.appendChild(og);
+            document.body.appendChild(pop);
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              const wasOpen = pop.classList.contains('open');
+              closePops();
+              if (!wasOpen) openPop(btn, pop);
+            };
+            return btn;
+          }
+
+          // Artist button
+          const artOpts = artists.map(a => {
+            let info = a.gender[0];
+            if (a.voice) info += '/' + a.voice;
+            return { value: a.name, label: `${a.name} (${info})` };
           });
-          symSel.onchange = ((textarea) => e => {
-            if (!e.target.value) return;
-            insertSymbolAtCursor(textarea, e.target.value);
-            e.target.value = '';
-          })(ta);
-          row.appendChild(symSel);
+          btns.appendChild(mkMetaBtn('A', 'var(--green)', lineObj.artist, artOpts,
+            ((g, idx) => v => { g.lines[idx].artist = v; renderSec(); scheduleAutoSave(); })(grp, li)));
+
+          // Type button
+          const typeOpts = TYPES.map(t => ({ value: t, label: t }));
+          btns.appendChild(mkMetaBtn('T', 'var(--cyan)', lineObj.type === 'Rap' ? '' : lineObj.type, typeOpts,
+            ((g, idx) => v => { g.lines[idx].type = v || 'Rap'; renderSec(); scheduleAutoSave(); })(grp, li)));
+
+          // Vocal button
+          const vocOpts = VOCAL_CUE_PRESETS.map(p => ({ value: p, label: p }));
+          btns.appendChild(mkMetaBtn('V', 'var(--pink)', lineObj.vocalCues, vocOpts,
+            ((g, idx) => v => { g.lines[idx].vocalCues = v; renderSec(); scheduleAutoSave(); })(grp, li)));
+
+          // Performance button
+          const perfOpts = PERFORMANCE_PRESETS.map(p => ({ value: p, label: p }));
+          btns.appendChild(mkMetaBtn('P', 'var(--orange)', lineObj.performance, perfOpts,
+            ((g, idx) => v => { g.lines[idx].performance = v; renderSec(); scheduleAutoSave(); })(grp, li)));
+
+          // ── Symbol insert button ──
+          const symBtn = document.createElement('button');
+          symBtn.className = 'line-sym-btn';
+          symBtn.textContent = '\u2795';
+          const symPop = document.createElement('div');
+          symPop.className = 'sym-pop';
+          INLINE_SYMBOL_GROUPS.forEach(grpS => {
+            const lbl = document.createElement('div');
+            lbl.className = 'sym-pop-group';
+            lbl.textContent = grpS.group;
+            symPop.appendChild(lbl);
+            grpS.items.forEach(sym => {
+              const item = document.createElement('button');
+              item.className = 'sym-pop-item';
+              item.textContent = sym.title ? `${sym.label}  (${sym.title})` : sym.label;
+              item.onclick = ((textarea, label) => e => {
+                e.stopPropagation();
+                insertSymbolAtCursor(textarea, label);
+                closePops();
+              })(ta, sym.label);
+              symPop.appendChild(item);
+            });
+          });
+          document.body.appendChild(symPop);
+          symBtn.onclick = (e) => {
+            e.stopPropagation();
+            const wasOpen = symPop.classList.contains('open');
+            closePops();
+            if (!wasOpen) openPop(symBtn, symPop);
+          };
+          btns.appendChild(symBtn);
+
+          row.appendChild(btns);
           lineWrap.appendChild(row);
-
-          // ── Per-line meta row ──
-          const meta = document.createElement('div');
-          meta.className = 'line-meta';
-
-          // Artist
-          const artSel = buildArtistSel(lineObj.artist, ((g, idx) => e => { g.lines[idx].artist = e.target.value; scheduleAutoSave(); })(grp, li));
-          const mf1 = document.createElement('div');
-          mf1.className = 'lm-field';
-          mf1.innerHTML = '<span class="lm-label" style="color:var(--green)">A</span>';
-          mf1.appendChild(artSel);
-          meta.appendChild(mf1);
-
-          // Type
-          const typeSel = document.createElement('select');
-          typeSel.innerHTML = TYPES.map(t => `<option${lineObj.type === t ? ' selected' : ''}>${t}</option>`).join('');
-          typeSel.onchange = ((g, idx) => e => { g.lines[idx].type = e.target.value; scheduleAutoSave(); })(grp, li);
-          const mf2 = document.createElement('div');
-          mf2.className = 'lm-field';
-          mf2.innerHTML = '<span class="lm-label" style="color:var(--cyan)">T</span>';
-          mf2.appendChild(typeSel);
-          meta.appendChild(mf2);
-
-          // Vocal
-          const vocSel = document.createElement('select');
-          vocSel.innerHTML = '<option value="">\u2014</option>' + VOCAL_CUE_PRESETS.map(p => `<option value="${esc(p)}"${lineObj.vocalCues === p ? ' selected' : ''}>${esc(p)}</option>`).join('');
-          vocSel.onchange = ((g, idx) => e => { g.lines[idx].vocalCues = e.target.value; scheduleAutoSave(); })(grp, li);
-          const mf3 = document.createElement('div');
-          mf3.className = 'lm-field';
-          mf3.innerHTML = '<span class="lm-label" style="color:var(--pink)">V</span>';
-          mf3.appendChild(vocSel);
-          meta.appendChild(mf3);
-
-          // Performance
-          const perfSel = document.createElement('select');
-          perfSel.innerHTML = '<option value="">\u2014</option>' + PERFORMANCE_PRESETS.map(p => `<option value="${esc(p)}"${lineObj.performance === p ? ' selected' : ''}>${esc(p)}</option>`).join('');
-          perfSel.onchange = ((g, idx) => e => { g.lines[idx].performance = e.target.value; scheduleAutoSave(); })(grp, li);
-          const mf4 = document.createElement('div');
-          mf4.className = 'lm-field';
-          mf4.innerHTML = '<span class="lm-label" style="color:var(--orange)">P</span>';
-          mf4.appendChild(perfSel);
-          meta.appendChild(mf4);
-
-          lineWrap.appendChild(meta);
           lines.appendChild(lineWrap);
         });
         gc.appendChild(lines);
@@ -2443,6 +2557,28 @@ const INLINE_SYMBOL_GROUPS = [
     { label: '\u00d73', title: 'Wiederholung \u00d73' }
   ]}
 ];
+
+// Close all open popovers
+function closePops() {
+  document.querySelectorAll('.lm-pop.open, .sym-pop.open').forEach(p => p.classList.remove('open'));
+}
+function openPop(btn, pop) {
+  closePops();
+  const r = btn.getBoundingClientRect();
+  pop.style.left = r.left + 'px';
+  pop.style.top = (r.bottom + 4) + 'px';
+  // If it would overflow right edge, align to right side of button
+  pop.classList.add('open');
+  const pr = pop.getBoundingClientRect();
+  if (pr.right > window.innerWidth - 8) {
+    pop.style.left = Math.max(8, r.right - pr.width) + 'px';
+  }
+  // If it would overflow bottom, show above
+  if (pr.bottom > window.innerHeight - 8) {
+    pop.style.top = (r.top - pr.height - 4) + 'px';
+  }
+}
+document.addEventListener('click', () => closePops());
 
 function insertSymbolAtCursor(ta, label) {
   if (!ta) return;
