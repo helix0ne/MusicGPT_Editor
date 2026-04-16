@@ -1286,7 +1286,14 @@ select option:hover {
 }
 .output-box .out-artists-block {
   color: var(--green);
-  opacity: .8;
+  opacity: .9;
+  margin: 4px 0;
+}
+.output-box .out-artist-line {
+  color: var(--green);
+  opacity: .9;
+  padding-left: 8px;
+  font-size: .85rem;
 }
 .output-box .out-schema-line {
   color: var(--orange);
@@ -2228,17 +2235,27 @@ function genOut() {
     htmlOut += `<div class="out-prompt-block">${esc(prompt)}</div>`;
   }
 
-  // HTML-only: show artists & schema for reference (not in copy output)
+  // Artist Blend block (both plain & HTML) — follows MusicGPT multi-artist convention
   if (artists.length) {
-    let artHtml = '<div class="out-artists-block">Artists: ';
-    artHtml += artists.map(a => {
-      let info = a.gender[0];
-      if (a.voice) info += '/' + a.voice;
-      return `${esc(a.name)}(${esc(info)})`;
-    }).join(', ');
+    plainOut += 'Artist Blend:\n';
+    let artHtml = '<div class="out-artists-block">Artist Blend:';
+    artists.forEach(a => {
+      const parts = [];
+      if (a.role) parts.push(a.role);
+      let gv = a.gender || '';
+      if (a.voice) gv = gv ? gv + '/' + a.voice : a.voice;
+      if (gv) parts.push(gv);
+      if (a.style) parts.push(a.style);
+      const meta = parts.length ? ' (' + parts.join(', ') + ')' : '';
+      plainOut += '- ' + a.name + meta + '\n';
+      artHtml += `<div class="out-artist-line">- ${esc(a.name)}${meta ? '<span class="out-annotation">' + esc(meta) + '</span>' : ''}</div>`;
+    });
+    plainOut += '\n';
     htmlOut += artHtml + '</div>';
   }
-  htmlOut += `<div class="out-schema-line">Schema: ${schema.map(s => esc(s)).join(' \u2192 ')}</div><hr class="out-separator">`;
+  // Structure line — uses hyphens (MusicGPT-preferred over arrows)
+  plainOut += 'Structure: ' + schema.join(' - ') + '\n\n';
+  htmlOut += `<div class="out-schema-line">Structure: ${schema.map(s => esc(s)).join(' - ')}</div><hr class="out-separator">`;
 
   let totalWords = 0;
   let totalLines = 0;
@@ -2252,49 +2269,49 @@ function genOut() {
       secPlain = '(instrumental)\n';
       secHtml = '<span class="out-annotation">(instrumental)</span>\n';
     } else {
-      // Track changes within a section to avoid redundant prefixes
-      let prevArtist = null;
-      let prevType = null;
+      // Determine section-level uniform artist / type — if consistent, fold into section tag
+      const allLines = sec.groups.flatMap(g => g.lines).filter(l => (l.text||'').trim());
+      const uniqueArtists = [...new Set(allLines.map(l => l.artist).filter(Boolean))];
+      const uniqueTypes = [...new Set(allLines.map(l => l.type || 'Rap'))];
+      const sectionArtist = uniqueArtists.length === 1 && uniqueArtists[0] ? uniqueArtists[0] : null;
+      const sectionType = (uniqueTypes.length === 1 && uniqueTypes[0] !== 'Rap') ? uniqueTypes[0] : null;
+      // Build per-section tag annotation: [Verse - A, Sing style]
+      const tagAnno = [];
+      if (sectionArtist) tagAnno.push(sectionArtist);
+      if (sectionType) tagAnno.push(sectionType + ' style');
+      if (tagAnno.length) {
+        sec._computedTag = sec.tag.replace(/\]$/, ' - ' + tagAnno.join(', ') + ']');
+      } else {
+        sec._computedTag = sec.tag;
+      }
       sec.groups.forEach((g, gi) => {
         if (!g.lines.some(l => (l.text || '').trim())) return;
         g.lines.forEach(l => {
           const txt = (l.text || '').trim();
           if (!txt) return;
-          // Build distinct annotation segments with unambiguous syntax:
-          //   <Artist>   (only when changed from previous line — avoids A-Reim collision)
-          //   {Type}     (only when changed and not the default Rap)
-          //   (v: cue)   vocal cue  — clearly tagged
-          //   (p: perf)  performance — clearly tagged
-          let plainParts = [];
-          let htmlParts = [];
-          if (l.artist && l.artist !== prevArtist) {
-            plainParts.push('<' + l.artist + '>');
-            htmlParts.push('<span class="out-anno-artist">&lt;' + esc(l.artist) + '&gt;</span>');
-            prevArtist = l.artist;
+          // Per-line annotations use MusicGPT-friendly (...) syntax only.
+          // Skip artist/type if they match the section-level uniform value.
+          const parts = [];
+          const htmlParts = [];
+          if (l.artist && l.artist !== sectionArtist) {
+            parts.push(l.artist);
+            htmlParts.push('<span class="out-anno-artist">' + esc(l.artist) + '</span>');
           }
-          const typeVal = l.type || 'Rap';
-          if (typeVal && typeVal !== prevType && typeVal !== 'Rap') {
-            plainParts.push('{' + typeVal + '}');
-            htmlParts.push('<span class="out-anno-type">{' + esc(typeVal) + '}</span>');
-            prevType = typeVal;
-          } else if (typeVal === 'Rap' && prevType && prevType !== 'Rap') {
-            // Switching back to default Rap — mark it
-            plainParts.push('{Rap}');
-            htmlParts.push('<span class="out-anno-type">{Rap}</span>');
-            prevType = typeVal;
-          } else if (!prevType) {
-            prevType = typeVal;
+          const lineType = l.type || 'Rap';
+          if (!sectionType && lineType !== 'Rap') {
+            parts.push(lineType);
+            htmlParts.push('<span class="out-anno-type">' + esc(lineType) + '</span>');
           }
           if (l.vocalCues) {
-            plainParts.push('(v: ' + l.vocalCues + ')');
-            htmlParts.push('<span class="out-anno-vcue">(v: ' + esc(l.vocalCues) + ')</span>');
+            parts.push(l.vocalCues);
+            htmlParts.push('<span class="out-anno-vcue">' + esc(l.vocalCues) + '</span>');
           }
           if (l.performance) {
-            plainParts.push('(p: ' + l.performance + ')');
-            htmlParts.push('<span class="out-anno-perf">(p: ' + esc(l.performance) + ')</span>');
+            parts.push(l.performance);
+            htmlParts.push('<span class="out-anno-perf">' + esc(l.performance) + '</span>');
           }
-          const pfx = plainParts.length ? plainParts.join(' ') + ' ' : '';
-          const pfxHtml = htmlParts.length ? htmlParts.join(' ') + ' ' : '';
+          const pfx = parts.length ? '(' + parts.join(', ') + ') ' : '';
+          const pfxHtml = htmlParts.length ? '<span class="out-annotation">(</span>' + htmlParts.join('<span class="out-annotation">, </span>') + '<span class="out-annotation">)</span> ' : '';
           secPlain += pfx + txt + '\n';
           secHtml += `<div class="out-lyric-line">${pfxHtml}${esc(txt)}</div>`;
         });
@@ -2314,9 +2331,10 @@ function genOut() {
       });
     });
     const cfg = STYPES[sec.type] || STYPES.Verse;
-    // MusicGPT format: [Section] tag on its own line
-    plainOut += sec.tag + '\n' + secPlain + '\n';
-    htmlOut += `<div><span class="out-section-tag" style="color:${cfg.color};background:color-mix(in srgb, ${cfg.color} 12%, transparent);border:1px solid color-mix(in srgb, ${cfg.color} 25%, transparent)">${esc(sec.tag)}</span></div>${secHtml}<hr class="out-separator">`;
+    // MusicGPT format: [Section - annotations] tag on its own line
+    const outTag = sec._computedTag || sec.tag;
+    plainOut += outTag + '\n' + secPlain + '\n';
+    htmlOut += `<div><span class="out-section-tag" style="color:${cfg.color};background:color-mix(in srgb, ${cfg.color} 12%, transparent);border:1px solid color-mix(in srgb, ${cfg.color} 25%, transparent)">${esc(outTag)}</span></div>${secHtml}<hr class="out-separator">`;
   });
   const outBox = document.getElementById('outBox');
   outBox.innerHTML = htmlOut;
