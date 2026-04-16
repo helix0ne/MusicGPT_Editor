@@ -1247,6 +1247,27 @@ select option:hover {
   font-size: .7rem;
   opacity: .7;
 }
+.output-box .out-anno-artist {
+  color: var(--cyan);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+.output-box .out-anno-type {
+  color: var(--accent);
+  font-size: .72rem;
+  font-weight: 600;
+}
+.output-box .out-anno-vcue {
+  color: var(--pink);
+  font-size: .7rem;
+  opacity: .85;
+}
+.output-box .out-anno-perf {
+  color: var(--orange);
+  font-size: .7rem;
+  opacity: .85;
+}
 .output-box .out-lyric-line {
   padding-left: 4px;
 }
@@ -2231,18 +2252,49 @@ function genOut() {
       secPlain = '(instrumental)\n';
       secHtml = '<span class="out-annotation">(instrumental)</span>\n';
     } else {
+      // Track changes within a section to avoid redundant prefixes
+      let prevArtist = null;
+      let prevType = null;
       sec.groups.forEach((g, gi) => {
         if (!g.lines.some(l => (l.text || '').trim())) return;
         g.lines.forEach(l => {
           const txt = (l.text || '').trim();
           if (!txt) return;
-          // Per-line annotation
-          let anno = [];
-          if (l.artist) anno.push(l.artist);
-          if (l.vocalCues) anno.push(l.vocalCues);
-          if (l.performance) anno.push(l.performance);
-          const pfx = anno.length ? '(' + anno.join(', ') + ') ' : '';
-          const pfxHtml = anno.length ? '<span class="out-annotation">(' + esc(anno.join(', ')) + ')</span> ' : '';
+          // Build distinct annotation segments with unambiguous syntax:
+          //   <Artist>   (only when changed from previous line — avoids A-Reim collision)
+          //   {Type}     (only when changed and not the default Rap)
+          //   (v: cue)   vocal cue  — clearly tagged
+          //   (p: perf)  performance — clearly tagged
+          let plainParts = [];
+          let htmlParts = [];
+          if (l.artist && l.artist !== prevArtist) {
+            plainParts.push('<' + l.artist + '>');
+            htmlParts.push('<span class="out-anno-artist">&lt;' + esc(l.artist) + '&gt;</span>');
+            prevArtist = l.artist;
+          }
+          const typeVal = l.type || 'Rap';
+          if (typeVal && typeVal !== prevType && typeVal !== 'Rap') {
+            plainParts.push('{' + typeVal + '}');
+            htmlParts.push('<span class="out-anno-type">{' + esc(typeVal) + '}</span>');
+            prevType = typeVal;
+          } else if (typeVal === 'Rap' && prevType && prevType !== 'Rap') {
+            // Switching back to default Rap — mark it
+            plainParts.push('{Rap}');
+            htmlParts.push('<span class="out-anno-type">{Rap}</span>');
+            prevType = typeVal;
+          } else if (!prevType) {
+            prevType = typeVal;
+          }
+          if (l.vocalCues) {
+            plainParts.push('(v: ' + l.vocalCues + ')');
+            htmlParts.push('<span class="out-anno-vcue">(v: ' + esc(l.vocalCues) + ')</span>');
+          }
+          if (l.performance) {
+            plainParts.push('(p: ' + l.performance + ')');
+            htmlParts.push('<span class="out-anno-perf">(p: ' + esc(l.performance) + ')</span>');
+          }
+          const pfx = plainParts.length ? plainParts.join(' ') + ' ' : '';
+          const pfxHtml = htmlParts.length ? htmlParts.join(' ') + ' ' : '';
           secPlain += pfx + txt + '\n';
           secHtml += `<div class="out-lyric-line">${pfxHtml}${esc(txt)}</div>`;
         });
