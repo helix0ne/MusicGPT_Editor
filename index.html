@@ -1371,7 +1371,6 @@ Chor, aggressiv, doppelreime, Bass, hart, dubstep, double-time-rhyme</textarea>
         <th style="color:var(--cyan)">Gender</th>
         <th style="color:var(--pink)">Rolle</th>
         <th style="color:var(--yellow)">Stimmlage</th>
-        <th style="color:var(--orange)">Stimmstil</th>
         <th></th>
       </tr></thead>
       <tbody id="aBody"></tbody>
@@ -1429,18 +1428,12 @@ document.addEventListener('focusin', e => {
 });
 
 let artists = [
-  { name: 'A', gender: 'Male', role: 'Lead', voice: 'Tenor', style: '' },
-  { name: 'B', gender: 'Female', role: 'Lead', voice: 'Alto', style: '' },
-  { name: 'C', gender: 'Female', role: 'Support', voice: 'Soprano', style: '' },
-  { name: 'D', gender: 'Male', role: 'Support', voice: 'Bass', style: '' }
+  { name: 'A', gender: 'Male', role: 'Lead', voice: 'Tenor' },
+  { name: 'B', gender: 'Female', role: 'Lead', voice: 'Alto' },
+  { name: 'C', gender: 'Female', role: 'Support', voice: 'Soprano' },
+  { name: 'D', gender: 'Male', role: 'Support', voice: 'Bass' }
 ];
 const VOICE_RANGES = ['Soprano','Mezzo-Soprano','Alt','Alto','Tenor','Bariton','Bass'];
-const VOICE_STYLES = [
-  '','raspy','smooth','nasal','breathy','husky','falsetto','belting',
-  'vibrato','growl','sultry','head voice','chest voice','autotune',
-  'whisper','distorted','melodic','monotone','spoken word','screamo'
-];
-
 const STYPES = {
   Intro:          { color: 'var(--section-intro)',      lines: 4, tag: '[Intro]' },
   Verse:          { color: 'var(--section-verse)',      lines: 8, tag: '[Verse]' },
@@ -1668,13 +1661,6 @@ function renderArtists() {
     voiceSel.onchange = (e) => { artists[i].voice = e.target.value; scheduleAutoSave(); };
     tdVoice.appendChild(voiceSel);
     tr.appendChild(tdVoice);
-    // Voice style cell
-    const tdStyle = document.createElement('td');
-    const styleSel = document.createElement('select');
-    styleSel.innerHTML = VOICE_STYLES.map(v => `<option${(a.style || '') === v ? ' selected' : ''}>${v || '-- none --'}</option>`).join('');
-    styleSel.onchange = (e) => { artists[i].style = e.target.value === '-- none --' ? '' : e.target.value; scheduleAutoSave(); };
-    tdStyle.appendChild(styleSel);
-    tr.appendChild(tdStyle);
     // Delete button
     const tdDel = document.createElement('td');
     const delBtn = document.createElement('button');
@@ -1697,7 +1683,7 @@ function renderArtists() {
 function addArtist() {
   const idx = artists.length;
   const name = idx < 26 ? String.fromCharCode(65 + idx) : 'Artist' + (idx + 1);
-  artists.push({ name, gender: 'Male', role: 'Support', voice: 'Tenor', style: '' });
+  artists.push({ name, gender: 'Male', role: 'Support', voice: 'Tenor' });
   renderArtists();
   scheduleAutoSave();
 }
@@ -2245,7 +2231,6 @@ function genOut() {
       let gv = a.gender || '';
       if (a.voice) gv = gv ? gv + '/' + a.voice : a.voice;
       if (gv) parts.push(gv);
-      if (a.style) parts.push(a.style);
       const meta = parts.length ? ' (' + parts.join(', ') + ')' : '';
       plainOut += '- ' + a.name + meta + '\n';
       artHtml += `<div class="out-artist-line">- ${esc(a.name)}${meta ? '<span class="out-annotation">' + esc(meta) + '</span>' : ''}</div>`;
@@ -2368,10 +2353,10 @@ function fallbackCopy(text) {
 function clearAll() {
   confirmAction('Alles zuruecksetzen', 'Alle Inhalte werden geloescht. Auto-Save bleibt erhalten. Fortfahren?', () => {
   artists = [
-    { name: 'A', gender: 'Male', role: 'Lead', voice: 'Tenor', style: '' },
-    { name: 'B', gender: 'Female', role: 'Lead', voice: 'Alto', style: '' },
-    { name: 'C', gender: 'Female', role: 'Support', voice: 'Soprano', style: '' },
-    { name: 'D', gender: 'Male', role: 'Support', voice: 'Bass', style: '' }
+    { name: 'A', gender: 'Male', role: 'Lead', voice: 'Tenor' },
+    { name: 'B', gender: 'Female', role: 'Lead', voice: 'Alto' },
+    { name: 'C', gender: 'Female', role: 'Support', voice: 'Soprano' },
+    { name: 'D', gender: 'Male', role: 'Support', voice: 'Bass' }
   ];
   schema = ['Intro', 'Verse', 'Pre', 'Pre-Chorus', 'Chorus', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Final Hook', 'Outro'];
   document.getElementById('promptField').value = '';
